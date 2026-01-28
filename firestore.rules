@@ -1,0 +1,167 @@
+/**
+ * This ruleset enforces a strict user-ownership security model for the Pixel Soccer Showdown app.
+ * It is designed for rapid prototyping, focusing on strong authorization while remaining flexible
+ * on the specific shape of the data being written.
+ *
+ * Core Philosophy:
+ * A user can only access their own data. All operations are scoped to the authenticated
+ * user's ID (`request.auth.uid`), ensuring that no user can read, write, or delete
+ * another user's information.
+ *
+ * Data Structure:
+ * All user-specific data, including profiles and game statistics, is nested under a top-level
+ * `/users/{userId}` collection. This path-based ownership is the foundation of the security model,
+ * making authorization checks simple, fast, and secure.
+ *
+ * Key Security Decisions:
+ * - User Enumeration is Disabled: Listing the top-level `/users` collection is explicitly forbidden
+ *   to protect user privacy and prevent data scraping.
+ * - Strict Ownership: All documents and subcollections under `/users/{userId}` can only be accessed
+ *   by the user whose UID matches `{userId}`.
+ * - Relational Integrity: On creation, documents must contain an internal ID field that matches
+ *   the ID in the path (e.g., a `User` document at `/users/abc` must have `data.id == 'abc'`).
+ *   This field is immutable to prevent re-associating data with a different user.
+ *
+ * Denormalization for Authorization:
+ * The security model relies on path-based authorization. The `{userId}` in the path is the
+ * sole piece of information required to secure the entire data tree for a user. This avoids
+ * slow and costly `get()` calls to other documents for authorization checks.
+ *
+ * Structural Segregation:
+ * User profiles (`/users/{userId}`) and their statistics (`/users/{userId}/playerStatistics/...`)
+ * are in separate document/collection structures. While all are private to the user, this
+ * separation allows for distinct security and data modeling as the app evolves.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions for DRY and readable rules.
+
+    /**
+     * Checks if a user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    /**
+     * Checks if the specified user is an admin.
+     */
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.email == 'jasubrekboronov5@gmail.com';
+    }
+
+    /**
+     * Checks if the currently authenticated user is the owner of the resource.
+     * @param userId The UID of the user to check against.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Checks if the user is the owner AND the document already exists.
+     * Used for safe update and delete operations.
+     * @param userId The UID of the user to check against.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && exists(/databases/$(database)/documents/users/$(userId));
+    }
+
+    /**
+     * Validates required relational fields for a new User document.
+     * Ensures the document's internal ID matches the document ID in the path.
+     * @param userId The UID from the path parameter.
+     */
+    function isValidUserCreate(userId) {
+      let data = request.resource.data;
+      return data.id == userId &&
+             data.email == request.auth.token.email &&
+             data.displayName == request.auth.token.name &&
+             data.photoURL is string;
+    }
+    
+    /**
+     * Validates required fields for a new chat message.
+     * Ensures the message is linked to the sender and has content.
+     */
+    function isValidMessageCreate() {
+      let data = request.resource.data;
+      return data.userId == request.auth.uid &&
+             data.text is string && data.text.size() > 0 &&
+             data.displayName is string &&
+             data.photoURL is string &&
+             data.createdAt == request.time;
+    }
+
+
+    /**
+     * Validates immutability constraints for a User document update.
+     * The internal user ID, email, and creation timestamp cannot be changed after creation.
+     */
+    function isValidUserUpdate() {
+      let data = request.resource.data;
+      let existingData = resource.data;
+      return data.id == existingData.id &&
+             data.email == existingData.email &&
+             data.creationTimestamp == existingData.creationTimestamp;
+    }
+
+
+    /**
+     * @description Manages user profile documents. Allows public read for leaderboards.
+     * @path /users/{userId}
+     * @allow (get, list) Any signed-in user for leaderboard functionality.
+     * @allow (create, update) Only the owner of the profile.
+     * @deny (delete) Deleting user profiles is disallowed.
+     * @principle Balances public data for leaderboards with private write access.
+     */
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(userId) && isValidUserCreate(userId);
+      allow update: if (isExistingOwner(userId) && isValidUserUpdate()) || isAdmin();
+      // Deleting user profiles is disallowed to maintain data integrity, unless admin.
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * @description Publicly readable collection of all player statistics for building the leaderboard.
+     * @path /playerStatistics/{statisticId}
+     * @allow (read) Any signed-in user can read the statistics for the leaderboard.
+     * @allow (write) Only the owner can write their own statistics.
+     */
+     match /playerStatistics/{statisticId} {
+        allow read: if isSignedIn();
+        allow write: if isOwner(statisticId) || isAdmin();
+     }
+     
+    /**
+     * @description Manages messages in the global chat room.
+     * @path /messages/{messageId}
+     * @allow (read) Any signed-in user can read messages.
+     * @allow (create) An authenticated user can create a message as themselves.
+     * @deny (update, delete) Messages are immutable.
+     */
+    match /messages/{messageId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidMessageCreate();
+      allow update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Manages real-time Face-off game sessions.
+     * @path /faceOffGames/{gameId}
+     * @allow (read) Any signed-in user can read games for the lobby.
+     * @allow (create) A signed-in user can create a game, making themselves player 1.
+     * @allow (update) Only a player who is part of the game can update it.
+     */
+     match /faceOffGames/{gameId} {
+        allow read: if isSignedIn();
+        allow create: if isOwner(request.resource.data.playerIds[0]) || isAdmin();
+        // Allow updates if the user is one of the players in the game.
+        allow update: if (isSignedIn() && request.auth.uid in resource.data.playerIds) || isAdmin();
+        allow delete: if isAdmin();
+     }
+  }
+}

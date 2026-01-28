@@ -1,0 +1,173 @@
+
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the Pixel Soccer Showdown app.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity. Matches Firebase Auth UID."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the user.",
+          "format": "email"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The user's display name."
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "URL of the user's profile photo, obtained from google sign in.",
+          "format": "uri"
+        },
+        "creationTimestamp": {
+          "type": "string",
+          "description": "Timestamp indicating when the user account was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "displayName",
+        "creationTimestamp"
+      ]
+    },
+    "PlayerStatistic": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PlayerStatistic",
+      "type": "object",
+      "description": "Represents a user's statistics and progress within the game.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the PlayerStatistic entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:1 PlayerStatistic)"
+        },
+        "clubGuessrGamesPlayed": {
+          "type": "number",
+          "description": "Number of Club Guessr games played by the user."
+        },
+        "clubGuessrGamesWon": {
+          "type": "number",
+          "description": "Number of Club Guessr games won by the user."
+        },
+        "statDetectiveGamesPlayed": {
+          "type": "number",
+          "description": "Number of stat detective games played by the user."
+        },
+        "statDetectiveGamesWon": {
+          "type": "number",
+          "description": "Number of stat detective games won by the user."
+        },
+        "footballerFaceoffGamesPlayed": {
+          "type": "number",
+          "description": "Number of footballer face-off games played by the user."
+        },
+        "footballerFaceoffGamesWon": {
+          "type": "number",
+          "description": "Number of footballer face-off games won by the user."
+        },
+        "coins": {
+          "type": "number",
+          "description": "The user's total coins earned from winning games."
+        },
+        "purchasedThemes": {
+            "type": "array",
+            "description": "An array of theme IDs that the user has purchased.",
+            "items": {
+                "type": "string"
+            }
+        },
+        "purchasedAvatars": {
+            "type": "array",
+            "description": "An array of avatar image URLs that the user has purchased.",
+            "items": {
+                "type": "string",
+                "format": "uri"
+            }
+        },
+        "purchasedClues": {
+            "type": "number",
+            "description": "The number of clues the user has purchased and has available."
+        }
+      },
+      "required": [
+        "id",
+        "userId"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "google.com"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profile information. Publicly readable for leaderboards, but only the authenticated user can modify their own profile.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/playerStatistics/{playerStatisticId}",
+        "definition": {
+          "entityName": "PlayerStatistic",
+          "schema": {
+            "$ref": "#/backend/entities/PlayerStatistic"
+          },
+          "description": "Stores player statistics related to a specific user. This is now a legacy collection and new data should be written to the top-level playerStatistics collection.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "playerStatisticId",
+              "description": "The unique identifier of the statistic document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/playerStatistics/{playerStatisticId}",
+        "definition": {
+          "entityName": "PlayerStatistic",
+          "schema": {
+            "$ref": "#/backend/entities/PlayerStatistic"
+          },
+          "description": "A denormalized, top-level collection of all player statistics, optimized for efficient querying of leaderboards. This collection is publicly readable by all authenticated users. Each user can only write to their own document within this collection.",
+          "params": [
+            {
+              "name": "playerStatisticId",
+              "description": "The unique identifier of the statistic document, which must match the authenticated user's UID."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "This Firestore data structure is designed to support the Pixel Soccer Showdown app, focusing on user authentication, player statistics, and a scalable leaderboard. The structure prioritizes Authorization Independence and supports the required Queryability, Atomicity, and Predictability (QAPs). \n\n**Authorization & Access:**\n\n*   **User Data (`/users/{userId}`):** User profiles are publicly readable to fetch display names and avatars for the leaderboard. However, write access is strictly limited to the user themselves (`isOwner(userId)`), ensuring data privacy and integrity.\n*   **Leaderboard Collection (`/playerStatistics`):** A denormalized, top-level collection `playerStatistics` is the primary source for leaderboard data. This is crucial for performance and security. It allows for efficient, indexed queries (`orderBy('coins').limit(10)`) without needing to scan all user documents. This collection is publicly readable by any authenticated user, but users can only write to their own document (where the document ID matches their UID), preventing cheating.\n\n**QAPs (Rules are not Filters):**\n\n*   The top-level `playerStatistics` collection is designed for secure `list` operations. Security rules can allow any signed-in user to `read` this collection, and the queries for the top 10 players are efficient and don't require filtering sensitive data.\n\n**Invariants:**\n\n*   Ownership is enforced by the path for all write operations in the `/users/{userId}` path. For the `/playerStatistics/{statisticId}` path, ownership is enforced by a rule checking `request.auth.uid == statisticId`."
+  }
+}
+
+    

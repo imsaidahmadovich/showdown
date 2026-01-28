@@ -1,0 +1,299 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the Pixel Soccer Showdown app.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity. Matches Firebase Auth UID."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the user.",
+          "format": "email"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The user's display name."
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "URL of the user's profile photo, obtained from google sign in.",
+          "format": "uri"
+        },
+        "creationTimestamp": {
+          "type": "string",
+          "description": "Timestamp indicating when the user account was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "displayName",
+        "creationTimestamp"
+      ]
+    },
+    "PlayerStatistic": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PlayerStatistic",
+      "type": "object",
+      "description": "Represents a user's statistics and progress within the game.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the PlayerStatistic entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:1 PlayerStatistic)"
+        },
+        "clubGuessrGamesPlayed": {
+          "type": "number",
+          "description": "Number of Club Guessr games played by the user."
+        },
+        "clubGuessrGamesWon": {
+          "type": "number",
+          "description": "Number of Club Guessr games won by the user."
+        },
+        "statDetectiveGamesPlayed": {
+          "type": "number",
+          "description": "Number of stat detective games played by the user."
+        },
+        "statDetectiveGamesWon": {
+          "type": "number",
+          "description": "Number of stat detective games won by the user."
+        },
+        "footballerFaceoffGamesPlayed": {
+          "type": "number",
+          "description": "Number of footballer face-off games played by the user."
+        },
+        "footballerFaceoffGamesWon": {
+          "type": "number",
+          "description": "Number of footballer face-off games won by the user."
+        },
+        "coins": {
+          "type": "number",
+          "description": "The user's total coins earned from winning games."
+        },
+        "purchasedThemes": {
+            "type": "array",
+            "description": "An array of theme IDs that the user has purchased.",
+            "items": {
+                "type": "string"
+            }
+        },
+        "purchasedBadges": {
+            "type": "array",
+            "description": "An array of badge IDs that the user has purchased.",
+            "items": {
+                "type": "string"
+            }
+        },
+        "equippedBadge": {
+            "type": "string",
+            "description": "The ID of the currently equipped badge."
+        },
+        "purchasedClues": {
+            "type": "number",
+            "description": "The number of clues the user has purchased and has available."
+        }
+      },
+      "required": [
+        "id",
+        "userId"
+      ]
+    },
+    "Message": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Message",
+      "type": "object",
+      "description": "Represents a single chat message in the global chat room.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Message."
+        },
+        "text": {
+          "type": "string",
+          "description": "The content of the chat message."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the message was sent.",
+          "format": "date-time"
+        },
+        "userId": {
+          "type": "string",
+          "description": "The UID of the user who sent the message."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The display name of the user who sent the message."
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "The photo URL of the user who sent the message.",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "text",
+        "createdAt",
+        "userId",
+        "displayName",
+        "photoURL"
+      ]
+    },
+    "FaceOffGame": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "FaceOffGame",
+      "type": "object",
+      "description": "Represents a real-time Footballer Face-off game session between two players.",
+      "properties": {
+        "playerIds": {
+          "type": "array",
+          "description": "An array containing the UIDs of the two players in the game.",
+          "items": { "type": "string" }
+        },
+        "players": {
+          "type": "object",
+          "description": "An object mapping player UIDs to their profile information.",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "displayName": { "type": "string" },
+              "photoURL": { "type": "string", "format": "uri" }
+            },
+            "required": ["displayName", "photoURL"]
+          }
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the game.",
+          "enum": ["waiting", "playing", "finished"]
+        },
+        "questions": {
+          "type": "array",
+          "description": "An array of footballer IDs representing the questions for the game.",
+          "items": { "type": "number" }
+        },
+        "currentRound": {
+          "type": "number",
+          "description": "The index of the current round (0-4)."
+        },
+        "rounds": {
+          "type": "array",
+          "description": "An array storing the state of each round.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "guesses": {
+                "type": "object",
+                "description": "Maps player UIDs to their string guess for the round.",
+                "additionalProperties": { "type": "string" }
+              },
+              "results": {
+                "type": "object",
+                "description": "Maps player UIDs to whether their guess was correct (boolean).",
+                "additionalProperties": { "type": "boolean" }
+              }
+            }
+          }
+        },
+        "scores": {
+          "type": "object",
+          "description": "An object mapping player UIDs to their current score in the game.",
+          "additionalProperties": { "type": "number" }
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the game was created.",
+          "format": "date-time"
+        },
+        "winnerId": {
+          "type": "string",
+          "description": "The UID of the winning player, 'draw', or null if the game is not finished."
+        }
+      },
+      "required": ["playerIds", "players", "status", "questions", "currentRound", "rounds", "scores", "createdAt"]
+    }
+  },
+  "auth": {
+    "providers": [
+      "google.com"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/entities/User"
+          },
+          "description": "Stores user profile information. Publicly readable for leaderboards, but only the authenticated user can modify their own profile.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/playerStatistics/{playerStatisticId}",
+        "definition": {
+          "entityName": "PlayerStatistic",
+          "schema": {
+            "$ref": "#/entities/PlayerStatistic"
+          },
+          "description": "A denormalized, top-level collection of all player statistics, optimized for efficient querying of leaderboards. This collection is publicly readable by all authenticated users. Each user can only write to their own document within this collection.",
+          "params": [
+            {
+              "name": "playerStatisticId",
+              "description": "The unique identifier of the statistic document, which must match the authenticated user's UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/messages/{messageId}",
+        "definition": {
+            "entityName": "Message",
+            "schema": {
+                "$ref": "#/entities/Message"
+            },
+            "description": "Stores all chat messages for the global chat room. Publicly readable by all authenticated users, but users can only write messages as themselves.",
+            "params": [
+                {
+                    "name": "messageId",
+                    "description": "The unique identifier of the chat message."
+                }
+            ]
+        }
+      },
+      {
+        "path": "/faceOffGames/{gameId}",
+        "definition": {
+            "entityName": "FaceOffGame",
+            "schema": {
+                "$ref": "#/entities/FaceOffGame"
+            },
+            "description": "Stores real-time Footballer Face-off game sessions. Readable by any signed-in user (for lobby), but can only be updated by players participating in the game.",
+            "params": [
+                {
+                    "name": "gameId",
+                    "description": "The unique identifier of the game session."
+                }
+            ]
+        }
+      }
+    ],
+    "reasoning": "The data model has been updated to include a top-level `/messages` collection to support a global, real-time chat feature. Each document within this collection represents a single message and contains the sender's information and the message content. This structure is simple and efficient for fetching a chronological list of messages. Security rules ensure that any authenticated user can read the chat, but a user can only create messages on their own behalf, preventing impersonation. Additionally, a `/faceOffGames` collection was added to facilitate real-time multiplayer for the Face-off game mode. Each document represents a game session, containing all necessary state to be managed between two players."
+  }
+}
