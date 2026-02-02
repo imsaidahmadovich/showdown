@@ -107,3 +107,5 @@ export default function LoginPage() {
     </div>
   );
 }
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6493634839455307"
+     crossorigin="anonymous"></script>
