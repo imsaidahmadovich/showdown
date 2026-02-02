@@ -12,7 +12,27 @@ import { useLanguage } from '@/context/language-context';
 import { collection, addDoc, serverTimestamp, query, orderBy, limit } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import type { Message } from '@/lib/data';
+import Document, { Html, Head, Main, NextScript } from 'next/document';
 
+class MyDocument extends Document {
+  render() {
+    return (
+      <Html>
+        <Head>
+        <meta name="google-adsense-account" content="ca-pub-XXXX" />
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6493634839455307"
+     crossorigin="anonymous"></script>
+      </Head>
+        <body>
+          <Main />
+          <NextScript />
+        </body>
+      </Html>
+    );
+  }
+}
+
+export default MyDocument;
 const ChatMessage = ({ message, isCurrentUser }: { message: Message; isCurrentUser: boolean }) => {
     return (
         <div className={cn("flex items-start gap-3", isCurrentUser && "flex-row-reverse")}>
