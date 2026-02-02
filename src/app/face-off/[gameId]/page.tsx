@@ -25,7 +25,27 @@ import { useUser, useFirestore, useMemoFirebase, useDoc, errorEmitter, Firestore
 import { useLanguage } from '@/context/language-context';
 import { doc, updateDoc, increment, runTransaction, DocumentReference, serverTimestamp } from 'firebase/firestore';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import Document, { Html, Head, Main, NextScript } from 'next/document';
 
+class MyDocument extends Document {
+  render() {
+    return (
+      <Html>
+        <Head>
+        <meta name="google-adsense-account" content="ca-pub-XXXX" />
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6493634839455307"
+     crossorigin="anonymous"></script>
+      </Head>
+        <body>
+          <Main />
+          <NextScript />
+        </body>
+      </Html>
+    );
+  }
+}
+
+export default MyDocument;
 const GAME_ROUNDS = 5;
 
 type GameStatus = 'waiting' | 'playing' | 'finished';
