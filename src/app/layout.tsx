@@ -4,7 +4,27 @@ import { Toaster } from '@/components/ui/toaster';
 import { MobileContainer } from '@/components/layout/mobile-container';
 import { FirebaseClientProvider } from '@/firebase';
 import { AppProvider } from '@/context/language-context';
+import Document, { Html, Head, Main, NextScript } from 'next/document';
 
+class MyDocument extends Document {
+  render() {
+    return (
+      <Html>
+        <Head>
+        <meta name="google-adsense-account" content="ca-pub-XXXX" />
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6493634839455307"
+     crossorigin="anonymous"></script>
+      </Head>
+        <body>
+          <Main />
+          <NextScript />
+        </body>
+      </Html>
+    );
+  }
+}
+
+export default MyDocument;
 export const metadata: Metadata = {
   title: 'Pixel Soccer Showdown',
   description: 'Guess footballers from silhouettes, stats, and face off against others online!',
