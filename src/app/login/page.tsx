@@ -19,7 +19,27 @@ import { AppLogo } from '@/components/icons';
 import { useAuth, useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { Loader2 } from 'lucide-react';
 import { useLanguage } from '@/context/language-context';
+import Document, { Html, Head, Main, NextScript } from 'next/document';
 
+class MyDocument extends Document {
+  render() {
+    return (
+      <Html>
+        <Head>
+        <meta name="google-adsense-account" content="ca-pub-XXXX" />
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6493634839455307"
+     crossorigin="anonymous"></script>
+      </Head>
+        <body>
+          <Main />
+          <NextScript />
+        </body>
+      </Html>
+    );
+  }
+}
+
+export default MyDocument;
 export default function LoginPage() {
   const auth = useAuth();
   const firestore = useFirestore();
