@@ -26,7 +26,27 @@ import { withAuth } from '@/components/auth/with-auth';
 import { useLanguage } from '@/context/language-context';
 import { useUser, useFirestore, useMemoFirebase, useDoc, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { doc, increment, runTransaction, DocumentReference, updateDoc } from 'firebase/firestore';
+import Document, { Html, Head, Main, NextScript } from 'next/document';
 
+class MyDocument extends Document {
+  render() {
+    return (
+      <Html>
+        <Head>
+        <meta name="google-adsense-account" content="ca-pub-XXXX" />
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6493634839455307"
+     crossorigin="anonymous"></script>
+      </Head>
+        <body>
+          <Main />
+          <NextScript />
+        </body>
+      </Html>
+    );
+  }
+}
+
+export default MyDocument;
 
 const formSchema = z.object({
   guess: z.string().min(2, { message: 'Guess must be at least 2 characters.' }),
